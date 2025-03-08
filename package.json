@@ -8,7 +8,8 @@
     "dev": "nodemon src/app.js",
     "test": "jest --detectOpenHandles",
     "seed": "node src/seeds/index.js",
-    "seed:users": "node src/seeds/users.seed.js"
+    "seed:users": "node src/seeds/users.seed.js",
+    "migrate": "node src/config/migrations/migrate.js"
   },
   "keywords": [],
   "author": "",

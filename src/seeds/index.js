@@ -2,13 +2,15 @@ const seedUsers = require('./users.seed');
 
 async function seedAll() {
   try {
-    // 按顺序执行所有种子
+    console.log('Starting database seeding...');
+    
+    console.log('\nSeeding users...');
     await seedUsers();
     
-    console.log('All seeds completed successfully!');
+    console.log('\nAll seeds completed successfully! 🎉');
     process.exit(0);
   } catch (error) {
-    console.error('Error running seeds:', error);
+    console.error('\n❌ Error running seeds:', error);
     process.exit(1);
   }
 }
