@@ -30,8 +30,9 @@ model Shop {
   ownerId         BigInt    @map("owner_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
-  owner           User      @relation(fields: [ownerId], references: [id])
+  owner           User      @relation("ShopOwner", fields: [ownerId], references: [id])
   products        Product[]
+  employees       UserShop[]
 
   @@map("shops")
 }
@@ -46,9 +47,25 @@ model User {
   status    Int       @db.TinyInt
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
-  shops     Shop[]
+  ownedShops Shop[]   @relation("ShopOwner")
+  workingShops UserShop[]
 
   @@map("users")
+}
+
+model UserShop {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  shopId    BigInt   @map("shop_id")
+  role      Int      @default(1) @db.TinyInt // 1: 店员, 2: 店长
+  status    Int      @default(1) @db.TinyInt // 1: 正常, 0: 禁用
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop     @relation(fields: [shopId], references: [id])
+
+  @@unique([userId, shopId])
+  @@map("user_shops")
 }
 
 model Product {
@@ -68,6 +85,7 @@ model Product {
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @updatedAt @map("updated_at")
   shop            Shop        @relation(fields: [shopId], references: [id])
+  category        Category    @relation(fields: [categoryId], references: [id])
   orderItems      OrderItem[]
 
   @@map("products")
@@ -170,4 +188,16 @@ model Verification {
 
   @@index([phone, expiresAt], name: "idx_phone_expires")
   @@map("verifications")
+}
+
+model Category {
+  id          BigInt    @id @default(autoincrement())
+  name        String    @db.VarChar(50)
+  description String?   @db.Text
+  status      Int      @db.TinyInt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  products    Product[]
+
+  @@map("categories")
 }

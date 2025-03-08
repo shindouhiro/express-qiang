@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Express.js CRUD API",
   "main": "src/app.js",
+  "prisma": {
+    "seed": "node src/seeds/shop-products.seed.js"
+  },
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
@@ -10,6 +13,9 @@
     "seed": "node src/seeds/index.js",
     "seed:users": "node src/seeds/users.seed.js",
     "seed:shops": "node src/seeds/shops.seed.js",
+    "seed:user-shops": "node src/seeds/user-shops.seed.js",
+    "seed:categories": "node src/seeds/categories.seed.js",
+    "seed:products": "node src/seeds/shop-products.seed.js",
     "migrate": "node src/config/migrations/migrate.js"
   },
   "keywords": [],

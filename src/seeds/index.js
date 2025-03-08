@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const seedUsers = require('./users.seed');
 const seedShops = require('./shops.seed');
+const seedUserShops = require('./user-shops.seed');
 
 async function seedAll() {
   try {
@@ -11,6 +12,9 @@ async function seedAll() {
     
     console.log('\nSeeding shops...');
     await seedShops();
+    
+    console.log('\nSeeding user-shop relationships...');
+    await seedUserShops();
     
     console.log('\nAll seeds completed successfully! 🎉');
   } catch (error) {
