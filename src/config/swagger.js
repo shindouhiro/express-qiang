@@ -71,6 +71,77 @@ const options = {
             },
           },
         },
+        Shop: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              description: '店铺ID',
+            },
+            name: {
+              type: 'string',
+              description: '店铺名称',
+            },
+            description: {
+              type: 'string',
+              description: '店铺描述',
+            },
+            logo: {
+              type: 'string',
+              description: '店铺logo URL',
+            },
+            legal_name: {
+              type: 'string',
+              description: '法人姓名',
+            },
+            id_card_no: {
+              type: 'string',
+              description: '法人身份证号',
+            },
+            id_card_front: {
+              type: 'string',
+              description: '身份证正面照片URL',
+            },
+            id_card_back: {
+              type: 'string',
+              description: '身份证反面照片URL',
+            },
+            business_license: {
+              type: 'string',
+              description: '营业执照照片URL',
+            },
+            business_permit: {
+              type: 'string',
+              description: '经营许可证照片URL',
+            },
+            wechat_qrcode: {
+              type: 'string',
+              description: '微信二维码URL',
+            },
+            audit_status: {
+              type: 'integer',
+              description: '审核状态(0:待审核,1:审核通过,2:审核拒绝)',
+            },
+            status: {
+              type: 'integer',
+              description: '状态(1:正常,0:关闭)',
+            },
+            user_id: {
+              type: 'integer',
+              description: '店主用户ID',
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: '创建时间',
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: '更新时间',
+            },
+          },
+        },
       },
     },
   },

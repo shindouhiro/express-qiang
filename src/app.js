@@ -8,6 +8,7 @@ const swaggerSpec = require('./config/swagger');
 const db = require('./config/database');
 
 const userRoutes = require('./routes/user.routes');
+const shopRoutes = require('./routes/shop.routes');
 
 const app = express();
 
@@ -19,7 +20,8 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
-app.use('/api', userRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/shops', shopRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,4 +1,6 @@
+const prisma = require('../lib/prisma');
 const seedUsers = require('./users.seed');
+const seedShops = require('./shops.seed');
 
 async function seedAll() {
   try {
@@ -7,13 +9,23 @@ async function seedAll() {
     console.log('\nSeeding users...');
     await seedUsers();
     
+    console.log('\nSeeding shops...');
+    await seedShops();
+    
     console.log('\nAll seeds completed successfully! 🎉');
-    process.exit(0);
   } catch (error) {
     console.error('\n❌ Error running seeds:', error);
-    process.exit(1);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-// 运行所有种子
-seedAll(); 
+// 如果直接运行此文件则执行种子
+if (require.main === module) {
+  seedAll()
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+} 

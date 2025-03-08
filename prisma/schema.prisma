@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Shop {
+  id              BigInt    @id @default(autoincrement())
+  name            String    @db.VarChar(101)
+  description     String?   @db.Text
+  logo            String?   @db.VarChar(256)
+  legalName       String    @map("legal_name") @db.VarChar(51)
+  idCardNo        String    @map("id_card_no") @db.VarChar(19)
+  idCardFront     String?   @map("id_card_front") @db.VarChar(256)
+  idCardBack      String?   @map("id_card_back") @db.VarChar(255)
+  businessLicense String?   @map("business_license") @db.VarChar(255)
+  businessPermit  String?   @map("business_permit") @db.VarChar(255)
+  wechatQrcode    String?   @map("wechat_qrcode") @db.VarChar(255)
+  auditStatus     Int       @map("audit_status") @db.TinyInt
+  status          Int       @db.TinyInt
+  ownerId         BigInt    @map("owner_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  owner           User      @relation(fields: [ownerId], references: [id])
+  products        Product[]
+
+  @@map("shops")
+}
+
+model User {
+  id        BigInt    @id @default(autoincrement())
+  phone     String    @unique @db.VarChar(11)
+  password  String    @db.VarChar(255)
+  userType  Int       @map("user_type") @db.TinyInt
+  nickname  String?   @db.VarChar(50)
+  avatar    String?   @db.VarChar(255)
+  status    Int       @db.TinyInt
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  shops     Shop[]
+
+  @@map("users")
+}
+
+model Product {
+  id              BigInt      @id @default(autoincrement())
+  shopId          BigInt      @map("shop_id")
+  categoryId      BigInt      @map("category_id")
+  name            String      @db.VarChar(100)
+  description     String?     @db.Text
+  specification   String?     @db.VarChar(255)
+  originalPrice   Decimal     @map("original_price") @db.Decimal(10, 2)
+  sellingPrice    Decimal     @map("selling_price") @db.Decimal(10, 2)
+  rewardAmount    Decimal     @map("reward_amount") @db.Decimal(10, 2)
+  stock           Int
+  promotionStart  DateTime?   @map("promotion_start")
+  promotionEnd    DateTime?   @map("promotion_end")
+  status          Int         @db.TinyInt
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  shop            Shop        @relation(fields: [shopId], references: [id])
+  orderItems      OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id           BigInt      @id @default(autoincrement())
+  orderNo      String      @unique @map("order_no") @db.VarChar(32)
+  shopId       BigInt      @map("shop_id")
+  userId       BigInt      @map("user_id")
+  totalAmount  Decimal     @map("total_amount") @db.Decimal(10, 2)
+  status       Int         @db.TinyInt
+  paymentTime  DateTime?   @map("payment_time")
+  shippingTime DateTime?   @map("shipping_time")
+  completeTime DateTime?   @map("complete_time")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  orderItems   OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id              BigInt   @id @default(autoincrement())
+  orderId         BigInt   @map("order_id")
+  productId       BigInt   @map("product_id")
+  productName     String   @map("product_name") @db.VarChar(100)
+  productPrice    Decimal  @map("product_price") @db.Decimal(10, 2)
+  quantity        Int
+  commissionRate  Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  commissionAmount Decimal @map("commission_amount") @db.Decimal(10, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  order           Order    @relation(fields: [orderId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model CommissionRule {
+  id        BigInt   @id @default(autoincrement())
+  shopId    BigInt   @map("shop_id")
+  productId BigInt   @map("product_id")
+  rate      Decimal  @db.Decimal(5, 2)
+  status    Int      @db.TinyInt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("commission_rules")
+}
+
+model Withdrawal {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  amount      Decimal  @db.Decimal(10, 2)
+  openid      String   @db.VarChar(50)
+  status      Int      @db.TinyInt
+  remark      String?  @db.VarChar(255)
+  auditTime   DateTime? @map("audit_time")
+  paymentTime DateTime? @map("payment_time")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("withdrawals")
+}
+
+model CommissionLog {
+  id           BigInt   @id @default(autoincrement())
+  userId       BigInt   @map("user_id")
+  orderId      BigInt   @map("order_id")
+  withdrawalId BigInt?  @map("withdrawal_id")
+  amount       Decimal  @db.Decimal(10, 2)
+  balance      Decimal  @db.Decimal(10, 2)
+  type         Int      @db.TinyInt
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("commission_logs")
+}
+
+model IncomeDetail {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  orderId   BigInt   @map("order_id")
+  amount    Decimal  @db.Decimal(10, 2)
+  type      Int      @db.TinyInt
+  status    Int      @db.TinyInt
+  remark    String?  @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("income_details")
+}
+
+model Verification {
+  id        BigInt   @id @default(autoincrement())
+  phone     String   @db.VarChar(11)
+  code      String   @db.VarChar(6)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone, expiresAt], name: "idx_phone_expires")
+  @@map("verifications")
+}
