@@ -6,9 +6,13 @@ const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 const db = require('./config/database');
+const errorHandler = require('./middlewares/error');
 
 const userRoutes = require('./routes/user.routes');
 const shopRoutes = require('./routes/shop.routes');
+const orderRoutes = require('./routes/order.routes');
+const healthRoutes = require('./routes/health.routes');
+const productRoutes = require('./routes/product.routes');
 
 const app = express();
 
@@ -20,16 +24,16 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/shops', shopRoutes);
+app.use('/api', healthRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/shops', shopRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/products', productRoutes);
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
+app.use(errorHandler);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // Only start the server if this file is run directly
 if (require.main === module) {

@@ -1,108 +1,77 @@
-const prisma = require('../lib/prisma');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 class Product {
-  static async create(productData) {
-    const {
-      shopId,
-      categoryId,
-      name,
-      description,
-      specification,
-      originalPrice,
-      sellingPrice,
-      rewardAmount,
-      stock,
-      promotionStart,
-      promotionEnd,
-      status = 1
-    } = productData;
-
-    return await prisma.product.create({
+  static async create(data) {
+    return prisma.product.create({
       data: {
-        shopId: BigInt(shopId),
-        categoryId: BigInt(categoryId),
-        name,
-        description,
-        specification,
-        originalPrice,
-        sellingPrice,
-        rewardAmount,
-        stock,
-        promotionStart,
-        promotionEnd,
-        status
+        ...data,
+        shopId: BigInt(data.shopId),
+        categoryId: BigInt(data.categoryId)
       }
     });
   }
 
   static async findById(id) {
-    return await prisma.product.findUnique({
+    return prisma.product.findUnique({
       where: { id: BigInt(id) },
       include: {
-        shop: true
+        shop: true,
+        category: true
       }
     });
   }
 
-  static async update(id, productData) {
-    const {
-      name,
-      description,
-      specification,
-      originalPrice,
-      sellingPrice,
-      rewardAmount,
-      stock,
-      promotionStart,
-      promotionEnd,
-      status
-    } = productData;
-
-    try {
-      return await prisma.product.update({
-        where: { id: BigInt(id) },
-        data: {
-          name,
-          description,
-          specification,
-          originalPrice,
-          sellingPrice,
-          rewardAmount,
-          stock,
-          promotionStart,
-          promotionEnd,
-          status
-        }
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return null;
+  static async update(id, data) {
+    return prisma.product.update({
+      where: { id: BigInt(id) },
+      data: {
+        ...data,
+        categoryId: data.categoryId ? BigInt(data.categoryId) : undefined
       }
-      throw error;
-    }
+    });
   }
 
-  static async list(page = 1, limit = 10, filters = {}) {
-    const where = {};
+  static async delete(id) {
+    return prisma.product.update({
+      where: { id: BigInt(id) },
+      data: { status: 0 }
+    });
+  }
+
+  static async list(page, limit, filters) {
+    const where = { status: 1 };
 
     if (filters.shopId) {
       where.shopId = BigInt(filters.shopId);
     }
+
     if (filters.categoryId) {
       where.categoryId = BigInt(filters.categoryId);
     }
+
     if (filters.status !== undefined) {
       where.status = filters.status;
     }
+
     if (filters.name) {
       where.name = { contains: filters.name };
     }
+
     if (filters.minPrice) {
-      where.sellingPrice = { ...where.sellingPrice, gte: filters.minPrice };
+      where.sellingPrice = {
+        ...where.sellingPrice,
+        gte: filters.minPrice
+      };
     }
+
     if (filters.maxPrice) {
-      where.sellingPrice = { ...where.sellingPrice, lte: filters.maxPrice };
+      where.sellingPrice = {
+        ...where.sellingPrice,
+        lte: filters.maxPrice
+      };
     }
+
     if (filters.inPromotion) {
       const now = new Date();
       where.AND = [
@@ -111,57 +80,49 @@ class Product {
       ];
     }
 
-    const [products, total] = await Promise.all([
+    const [total, products] = await Promise.all([
+      prisma.product.count({ where }),
       prisma.product.findMany({
         where,
         include: {
-          shop: true
+          shop: {
+            select: {
+              id: true,
+              name: true,
+              logo: true
+            }
+          },
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
         },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' }
-      }),
-      prisma.product.count({ where })
+      })
     ]);
 
     return {
       products,
       total,
       page,
-      limit
+      limit,
+      totalPages: Math.ceil(total / limit)
     };
   }
 
-  static async delete(id) {
-    try {
-      await prisma.product.delete({
-        where: { id: BigInt(id) }
-      });
-      return true;
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return false;
-      }
-      throw error;
-    }
-  }
-
   static async updateStock(id, quantity) {
-    try {
-      return await prisma.product.update({
-        where: { id: BigInt(id) },
-        data: {
-          stock: {
-            increment: quantity
-          }
+    return prisma.product.update({
+      where: { id: BigInt(id) },
+      data: {
+        stock: {
+          increment: quantity
         }
-      });
-    } catch (error) {
-      if (error.code === 'P2025') {
-        return null;
       }
-      throw error;
-    }
+    });
   }
 
   static async findByShop(shopId, page = 1, limit = 10) {

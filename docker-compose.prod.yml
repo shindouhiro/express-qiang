@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    image: shindouhiro/qiang 
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - JWT_SECRET=${JWT_SECRET:-default_secret}
+      - DATABASE_URL=mysql://root:root123456@db:3306/qiang_qiang
+    depends_on:
+      - db
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - qiang-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123456
+      - MYSQL_DATABASE=qiang_qiang
+      - MYSQL_USER=qiang
+      - MYSQL_PASSWORD=qiang123456
+      - TZ=Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./prisma/migrations:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+            --character-set-server=utf8mb4
+            --collation-server=utf8mb4_unicode_ci
+            --max_connections=1000
+            --wait_timeout=28800
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - qiang-network
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  qiang-network:
+    driver: bridge 

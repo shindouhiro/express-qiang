@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+      - DB_USER=qiang
+      - DB_PASSWORD=qiang123456
+      - DB_NAME=qiang_qiang
+      - JWT_SECRET=your_jwt_secret_key
+      - DATABASE_URL=mysql://qiang:qiang123456@db:3306/qiang_qiang
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - qiang-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123456
+      - MYSQL_DATABASE=qiang_qiang
+      - MYSQL_USER=qiang
+      - MYSQL_PASSWORD=qiang123456
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./prisma/migrations:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    networks:
+      - qiang-network
+
+volumes:
+  mysql-data:
+
+networks:
+  qiang-network:
+    driver: bridge 

@@ -1,3 +1,5 @@
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const Product = require('../models/product.model');
 const Shop = require('../models/shop.model');
 const { ApiError } = require('../utils/ApiError');
@@ -92,7 +94,7 @@ const { ApiError } = require('../utils/ApiError');
 class ProductController {
   /**
    * @swagger
-   * /products:
+   * /api/v1/products:
    *   post:
    *     summary: 创建商品
    *     tags: [Products]
@@ -208,7 +210,7 @@ class ProductController {
 
   /**
    * @swagger
-   * /products/{id}:
+   * /api/v1/products/{id}:
    *   put:
    *     summary: 更新商品
    *     tags: [Products]
@@ -316,7 +318,7 @@ class ProductController {
 
   /**
    * @swagger
-   * /products/{id}:
+   * /api/v1/products/{id}:
    *   delete:
    *     summary: 删除商品
    *     tags: [Products]
@@ -372,7 +374,7 @@ class ProductController {
 
   /**
    * @swagger
-   * /products/{id}:
+   * /api/v1/products/{id}:
    *   get:
    *     summary: 获取商品详情
    *     tags: [Products]
@@ -415,7 +417,7 @@ class ProductController {
 
   /**
    * @swagger
-   * /products:
+   * /api/v1/products:
    *   get:
    *     summary: 获取商品列表
    *     tags: [Products]
@@ -533,7 +535,7 @@ class ProductController {
 
   /**
    * @swagger
-   * /products/{id}/stock:
+   * /api/v1/products/{id}/stock:
    *   patch:
    *     summary: 更新商品库存
    *     tags: [Products]
@@ -609,6 +611,230 @@ class ProductController {
       message: '更新库存成功'
     });
   }
+
+  // 获取商品列表
+  async getProducts(req, res) {
+    try {
+      const { 
+        page = 1, 
+        limit = 10, 
+        categoryId, 
+        shopId,
+        minPrice,
+        maxPrice,
+        status = 1 // 默认只显示上架商品
+      } = req.query;
+
+      // 构建查询条件
+      const where = {
+        status: parseInt(status)
+      };
+
+      if (categoryId) {
+        where.categoryId = BigInt(categoryId);
+      }
+
+      if (shopId) {
+        where.shopId = BigInt(shopId);
+      }
+
+      if (minPrice) {
+        where.sellingPrice = {
+          ...where.sellingPrice,
+          gte: parseFloat(minPrice)
+        };
+      }
+
+      if (maxPrice) {
+        where.sellingPrice = {
+          ...where.sellingPrice,
+          lte: parseFloat(maxPrice)
+        };
+      }
+
+      // 查询商品
+      const products = await prisma.product.findMany({
+        where,
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          shop: {
+            select: {
+              id: true,
+              name: true,
+              logo: true
+            }
+          }
+        },
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit),
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // 获取总数
+      const total = await prisma.product.count({ where });
+
+      res.json({
+        data: products,
+        pagination: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      });
+    } catch (error) {
+      console.error('Get products error:', error);
+      res.status(500).json({ message: '获取商品列表失败' });
+    }
+  }
+
+  // 获取商品详情
+  async getProductById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const product = await prisma.product.findUnique({
+        where: { id: BigInt(id) },
+        include: {
+          category: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          shop: {
+            select: {
+              id: true,
+              name: true,
+              logo: true,
+              description: true
+            }
+          }
+        }
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: '商品不存在' });
+      }
+
+      res.json(product);
+    } catch (error) {
+      console.error('Get product detail error:', error);
+      res.status(500).json({ message: '获取商品详情失败' });
+    }
+  }
+
+  // 创建商品
+  async createProduct(req, res) {
+    try {
+      const {
+        name,
+        categoryId,
+        description,
+        specification,
+        originalPrice,
+        sellingPrice,
+        rewardAmount,
+        stock
+      } = req.body;
+
+      // 获取店铺ID（从认证用户中）
+      const shopId = req.user.shopId;
+
+      const product = await prisma.product.create({
+        data: {
+          name,
+          categoryId: BigInt(categoryId),
+          shopId: BigInt(shopId),
+          description,
+          specification,
+          originalPrice,
+          sellingPrice,
+          rewardAmount: rewardAmount || 0,
+          stock,
+          status: 1
+        }
+      });
+
+      res.status(201).json(product);
+    } catch (error) {
+      console.error('Create product error:', error);
+      res.status(500).json({ message: '创建商品失败' });
+    }
+  }
+
+  // 更新商品
+  async updateProduct(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const shopId = req.user.shopId;
+
+      // 检查商品是否存在且属于该店铺
+      const product = await prisma.product.findFirst({
+        where: {
+          id: BigInt(id),
+          shopId: BigInt(shopId)
+        }
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: '商品不存在或无权限修改' });
+      }
+
+      // 更新商品
+      const updatedProduct = await prisma.product.update({
+        where: { id: BigInt(id) },
+        data: {
+          ...updateData,
+          categoryId: updateData.categoryId ? BigInt(updateData.categoryId) : undefined
+        }
+      });
+
+      res.json(updatedProduct);
+    } catch (error) {
+      console.error('Update product error:', error);
+      res.status(500).json({ message: '更新商品失败' });
+    }
+  }
+
+  // 删除商品（软删除）
+  async deleteProduct(req, res) {
+    try {
+      const { id } = req.params;
+      const shopId = req.user.shopId;
+
+      // 检查商品是否存在且属于该店铺
+      const product = await prisma.product.findFirst({
+        where: {
+          id: BigInt(id),
+          shopId: BigInt(shopId)
+        }
+      });
+
+      if (!product) {
+        return res.status(404).json({ message: '商品不存在或无权限删除' });
+      }
+
+      // 软删除商品（更新状态为0）
+      await prisma.product.update({
+        where: { id: BigInt(id) },
+        data: { status: 0 }
+      });
+
+      res.json({ message: '商品已删除' });
+    } catch (error) {
+      console.error('Delete product error:', error);
+      res.status(500).json({ message: '删除商品失败' });
+    }
+  }
 }
 
-module.exports = new ProductController(); 
+module.exports = new ProductController();
