@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "seed": "node src/seeds/index.js",
+    "seed:users": "node src/seeds/users.seed.js"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +21,7 @@
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.2.0",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
