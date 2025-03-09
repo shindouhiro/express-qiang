@@ -3,7 +3,7 @@
 # 设置变量
 DOCKER_REPO="shindouhiro/qiang"
 VERSION=$(date +%Y%m%d%H%M)
-PLATFORMS="linux/amd64,linux/arm64"
+PLATFORMS="linux/amd64"
 
 # 输出颜色设置
 RED='\033[0;31m'

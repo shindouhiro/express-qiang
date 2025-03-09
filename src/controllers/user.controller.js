@@ -1,7 +1,21 @@
+// 导入用户模型
 const User = require('../models/user.model');
-const Verification = require('../models/verification.model');
+// 导入JWT工具
 const jwt = require('jsonwebtoken');
+// 导入密码加密工具
 const bcrypt = require('bcryptjs');
+// 导入随机密码生成工具
+const crypto = require('crypto');
+
+// 生成随机密码的函数
+const generateRandomPassword = () => {
+  return crypto.randomBytes(8).toString('hex');
+};
+
+// 使用Map存储验证码，key为手机号，value为{code, expireTime}
+const verificationCodes = new Map();
+// 验证码有效期（5分钟）
+const CODE_EXPIRE_TIME = 5 * 60 * 1000;
 
 /**
  * @swagger
@@ -60,8 +74,11 @@ exports.sendVerificationCode = async (req, res) => {
     // 生成6位随机验证码
     const code = generateVerificationCode();
     
-    // 保存验证码到数据库
-    await Verification.create(phone, code);
+    // 保存验证码到内存，设置过期时间
+    verificationCodes.set(phone, {
+      code,
+      expireTime: Date.now() + CODE_EXPIRE_TIME
+    });
 
     // TODO: 实际项目中这里需要调用短信服务发送验证码
     // 现在为了测试，直接返回验证码
@@ -143,10 +160,13 @@ exports.register = async (req, res) => {
     }
 
     // 验证验证码
-    const isValid = await Verification.verify(phone, code);
-    if (!isValid) {
-      return res.status(400).json({ message: 'Invalid verification code' });
+    const verification = verificationCodes.get(phone);
+    if (!verification || verification.code !== code || Date.now() > verification.expireTime) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
     }
+    
+    // 验证成功后删除验证码
+    verificationCodes.delete(phone);
 
     const userId = await User.create({
       phone,
@@ -217,16 +237,49 @@ exports.login = async (req, res) => {
     
     // 先检查用户是否存在
     const user = await User.findByPhone(phone);
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
 
     // 验证验证码
-    const isValid = await Verification.verify(phone, code);
-    if (!isValid) {
-      return res.status(401).json({ message: 'Invalid verification code' });
+    const verification = verificationCodes.get(phone);
+    if (!verification || verification.code !== code || Date.now() > verification.expireTime) {
+      return res.status(401).json({ message: 'Invalid or expired verification code' });
+    }
+    
+    // 验证成功后删除验证码
+    verificationCodes.delete(phone);
+
+    // 如果用户不存在，则创建新用户
+    if (!user) {
+      const userId = await User.create({
+        phone,
+        user_type: 1, // 默认创建普通用户
+        nickname: `用户${phone.substr(-4)}`, // 使用手机号后4位作为默认昵称
+        avatar: '', // 默认空头像
+      });
+      // 重新获取创建的用户信息
+      const newUser = await User.findById(userId);
+      if (!newUser) {
+        return res.status(500).json({ message: 'Error creating user' });
+      }
+      const token = jwt.sign(
+        { userId: newUser.id, userType: newUser.user_type },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: newUser.id,
+          phone: newUser.phone,
+          nickname: newUser.nickname,
+          avatar: newUser.avatar,
+          userType: newUser.user_type,
+          passwrod: '123456'
+        }
+      });
     }
 
+    // 已存在用户的登录流程
     const token = jwt.sign(
       { userId: user.id, userType: user.user_type },
       process.env.JWT_SECRET,
@@ -248,7 +301,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Error during login', error: error.message });
   }
 };
-
 /**
  * @swagger
  * /api/v1/users/profile:

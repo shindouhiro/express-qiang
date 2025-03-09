@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,40 +8,41 @@ datasource db {
 }
 
 model Shop {
-  id              BigInt    @id @default(autoincrement())
-  name            String    @db.VarChar(101)
-  description     String?   @db.Text
-  logo            String?   @db.VarChar(256)
-  legalName       String    @map("legal_name") @db.VarChar(51)
-  idCardNo        String    @map("id_card_no") @db.VarChar(19)
-  idCardFront     String?   @map("id_card_front") @db.VarChar(256)
-  idCardBack      String?   @map("id_card_back") @db.VarChar(255)
-  businessLicense String?   @map("business_license") @db.VarChar(255)
-  businessPermit  String?   @map("business_permit") @db.VarChar(255)
-  wechatQrcode    String?   @map("wechat_qrcode") @db.VarChar(255)
-  auditStatus     Int       @map("audit_status") @db.TinyInt
-  status          Int       @db.TinyInt
-  ownerId         BigInt    @map("owner_id")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  owner           User      @relation("ShopOwner", fields: [ownerId], references: [id])
+  id              BigInt     @id @default(autoincrement())
+  name            String     @db.VarChar(101)
+  description     String?    @db.Text
+  logo            String?    @db.VarChar(256)
+  legalName       String     @map("legal_name") @db.VarChar(51)
+  idCardNo        String     @map("id_card_no") @db.VarChar(19)
+  idCardFront     String?    @map("id_card_front") @db.VarChar(256)
+  idCardBack      String?    @map("id_card_back") @db.VarChar(255)
+  businessLicense String?    @map("business_license") @db.VarChar(255)
+  businessPermit  String?    @map("business_permit") @db.VarChar(255)
+  wechatQrcode    String?    @map("wechat_qrcode") @db.VarChar(255)
+  auditStatus     Int        @map("audit_status") @db.TinyInt
+  status          Int        @db.TinyInt
+  ownerId         BigInt     @map("owner_id")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
   products        Product[]
+  owner           User       @relation("ShopOwner", fields: [ownerId], references: [id])
   employees       UserShop[]
 
+  @@index([ownerId], map: "shops_owner_id_fkey")
   @@map("shops")
 }
 
 model User {
-  id        BigInt    @id @default(autoincrement())
-  phone     String    @unique @db.VarChar(11)
-  password  String    @db.VarChar(255)
-  userType  Int       @map("user_type") @db.TinyInt
-  nickname  String?   @db.VarChar(50)
-  avatar    String?   @db.VarChar(255)
-  status    Int       @db.TinyInt
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  ownedShops Shop[]   @relation("ShopOwner")
+  id           BigInt     @id @default(autoincrement())
+  phone        String     @unique @db.VarChar(11)
+  password     String?    @db.VarChar(255)
+  userType     Int        @map("user_type") @db.TinyInt
+  nickname     String?    @db.VarChar(50)
+  avatar       String?    @db.VarChar(255)
+  status       Int        @db.TinyInt
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  ownedShops   Shop[]     @relation("ShopOwner")
   workingShops UserShop[]
 
   @@map("users")
@@ -57,37 +52,40 @@ model UserShop {
   id        BigInt   @id @default(autoincrement())
   userId    BigInt   @map("user_id")
   shopId    BigInt   @map("shop_id")
-  role      Int      @default(1) @db.TinyInt // 1: 店员, 2: 店长
-  status    Int      @default(1) @db.TinyInt // 1: 正常, 0: 禁用
+  role      Int      @default(1) @db.TinyInt
+  status    Int      @default(1) @db.TinyInt
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id])
   shop      Shop     @relation(fields: [shopId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, shopId])
+  @@index([shopId], map: "user_shops_shop_id_fkey")
   @@map("user_shops")
 }
 
 model Product {
-  id              BigInt      @id @default(autoincrement())
-  shopId          BigInt      @map("shop_id")
-  categoryId      BigInt      @map("category_id")
-  name            String      @db.VarChar(100)
-  description     String?     @db.Text
-  specification   String?     @db.VarChar(255)
-  originalPrice   Decimal     @map("original_price") @db.Decimal(10, 2)
-  sellingPrice    Decimal     @map("selling_price") @db.Decimal(10, 2)
-  rewardAmount    Decimal     @map("reward_amount") @db.Decimal(10, 2)
-  stock           Int
-  promotionStart  DateTime?   @map("promotion_start")
-  promotionEnd    DateTime?   @map("promotion_end")
-  status          Int         @db.TinyInt
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-  shop            Shop        @relation(fields: [shopId], references: [id])
-  category        Category    @relation(fields: [categoryId], references: [id])
-  orderItems      OrderItem[]
+  id             BigInt      @id @default(autoincrement())
+  shopId         BigInt      @map("shop_id")
+  categoryId     BigInt      @map("category_id")
+  name           String      @db.VarChar(100)
+  description    String?     @db.Text
+  specification  String?     @db.VarChar(255)
+  originalPrice  Decimal     @map("original_price") @db.Decimal(10, 2)
+  sellingPrice   Decimal     @map("selling_price") @db.Decimal(10, 2)
+  rewardAmount   Decimal     @map("reward_amount") @db.Decimal(10, 2)
+  stock          Int
+  promotionStart DateTime?   @map("promotion_start")
+  promotionEnd   DateTime?   @map("promotion_end")
+  status         Int         @db.TinyInt
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  orderItems     OrderItem[]
+  category       Category    @relation(fields: [categoryId], references: [id])
+  shop           Shop        @relation(fields: [shopId], references: [id])
 
+  @@index([categoryId], map: "products_category_id_fkey")
+  @@index([shopId], map: "products_shop_id_fkey")
   @@map("products")
 }
 
@@ -109,19 +107,21 @@ model Order {
 }
 
 model OrderItem {
-  id              BigInt   @id @default(autoincrement())
-  orderId         BigInt   @map("order_id")
-  productId       BigInt   @map("product_id")
-  productName     String   @map("product_name") @db.VarChar(100)
-  productPrice    Decimal  @map("product_price") @db.Decimal(10, 2)
-  quantity        Int
-  commissionRate  Decimal  @map("commission_rate") @db.Decimal(5, 2)
-  commissionAmount Decimal @map("commission_amount") @db.Decimal(10, 2)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  order           Order    @relation(fields: [orderId], references: [id])
-  product         Product  @relation(fields: [productId], references: [id])
+  id               BigInt   @id @default(autoincrement())
+  orderId          BigInt   @map("order_id")
+  productId        BigInt   @map("product_id")
+  productName      String   @map("product_name") @db.VarChar(100)
+  productPrice     Decimal  @map("product_price") @db.Decimal(10, 2)
+  quantity         Int
+  commissionRate   Decimal  @map("commission_rate") @db.Decimal(5, 2)
+  commissionAmount Decimal  @map("commission_amount") @db.Decimal(10, 2)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  order            Order    @relation(fields: [orderId], references: [id])
+  product          Product  @relation(fields: [productId], references: [id])
 
+  @@index([orderId], map: "order_items_order_id_fkey")
+  @@index([productId], map: "order_items_product_id_fkey")
   @@map("order_items")
 }
 
@@ -138,16 +138,16 @@ model CommissionRule {
 }
 
 model Withdrawal {
-  id          BigInt   @id @default(autoincrement())
-  userId      BigInt   @map("user_id")
-  amount      Decimal  @db.Decimal(10, 2)
-  openid      String   @db.VarChar(50)
-  status      Int      @db.TinyInt
-  remark      String?  @db.VarChar(255)
+  id          BigInt    @id @default(autoincrement())
+  userId      BigInt    @map("user_id")
+  amount      Decimal   @db.Decimal(10, 2)
+  openid      String    @db.VarChar(50)
+  status      Int       @db.TinyInt
+  remark      String?   @db.VarChar(255)
   auditTime   DateTime? @map("audit_time")
   paymentTime DateTime? @map("payment_time")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@map("withdrawals")
 }
@@ -186,7 +186,7 @@ model Verification {
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([phone, expiresAt], name: "idx_phone_expires")
+  @@index([phone, expiresAt], map: "idx_phone_expires")
   @@map("verifications")
 }
 
@@ -194,9 +194,9 @@ model Category {
   id          BigInt    @id @default(autoincrement())
   name        String    @db.VarChar(50)
   description String?   @db.Text
-  status      Int      @db.TinyInt
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  status      Int       @db.TinyInt
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   products    Product[]
 
   @@map("categories")
