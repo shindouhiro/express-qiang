@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 
 /**
  * @swagger
- * /api/send-code:
+ * /api/v1/users/send-code:
  *   post:
  *     summary: 发送手机验证码
  *     tags: [Auth]
@@ -76,7 +76,7 @@ exports.sendVerificationCode = async (req, res) => {
 
 /**
  * @swagger
- * /api/register:
+ * /api/v1/users/register:
  *   post:
  *     summary: 用户注册
  *     tags: [Auth]
@@ -166,7 +166,7 @@ exports.register = async (req, res) => {
 
 /**
  * @swagger
- * /api/login:
+ * /api/v1/users/login:
  *   post:
  *     summary: 用户登录
  *     tags: [Auth]
@@ -251,7 +251,7 @@ exports.login = async (req, res) => {
 
 /**
  * @swagger
- * /api/profile:
+ * /api/v1/users/profile:
  *   get:
  *     summary: 获取用户个人信息
  *     tags: [User]
@@ -291,7 +291,7 @@ exports.getProfile = async (req, res) => {
 
 /**
  * @swagger
- * /api/profile:
+ * /api/v1/users/profile:
  *   put:
  *     summary: 更新用户个人信息
  *     tags: [User]
@@ -346,7 +346,7 @@ exports.updateProfile = async (req, res) => {
 
 /**
  * @swagger
- * /api/users:
+ * /api/v1/admin/users:
  *   get:
  *     summary: 获取用户列表（仅管理员）
  *     tags: [Admin]
@@ -405,7 +405,7 @@ exports.listUsers = async (req, res) => {
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /api/v1/admin/users/{id}:
  *   delete:
  *     summary: 删除用户（仅管理员）
  *     tags: [Admin]
@@ -449,4 +449,4 @@ exports.deleteUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: error.message });
   }
-}; 
+};
